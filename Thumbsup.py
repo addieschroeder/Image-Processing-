@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import numpy as np
 
 # Initialize MediaPipe Hands.
 mp_hands = mp.solutions.hands
@@ -12,9 +13,29 @@ mp_draw = mp.solutions.drawing_utils
 # Initialize webcam capture.
 cap = cv2.VideoCapture(0)
 
+camera_on = True  # Initial state
+
 # Zoom factor control
 current_zoom_factor = 1.0  # Start with no zoom
 
+def check_index_fingers_crossed(hands_landmarks):
+    # Assuming hands_landmarks contains landmarks for both hands
+    if len(hands_landmarks) == 2:
+        # Assuming the first hand in the list is the left hand and the second is the right hand
+        # This assumption may not always hold true; you might need additional logic to confirm hand orientation
+        
+        # Get the first (MCP) and second (PIP) knuckle landmarks for the index fingers of both hands
+        left_index_first_knuckle = hands_landmarks[1].landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
+        right_index_first_knuckle = hands_landmarks[0].landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
+        
+        left_index_second_knuckle = hands_landmarks[1].landmark[mp_hands.HandLandmark.INDEX_FINGER_DIP]
+        right_index_second_knuckle = hands_landmarks[0].landmark[mp_hands.HandLandmark.INDEX_FINGER_DIP]
+
+        # Check the conditions for "crossing" based on x-coordinates
+        if (left_index_first_knuckle.x < right_index_first_knuckle.x) and \
+           (left_index_second_knuckle.x > right_index_second_knuckle.x):
+            return True
+    return False
 
 # Function to check thumb position relative to other fingers 
 #   This function compares the vertical position of thumb to the 
@@ -65,37 +86,50 @@ while cap.isOpened():
         print("Ignoring empty camera frame.")
         continue
 
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = hands.process(image)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
     zoom_changed = False
 
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            mp_draw.draw_landmarks(
-                image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+    if camera_on:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        resultsHand = hands.process(image)
 
-            # Check for thumbs-up (zoom in)
-            if check_thumb_position(hand_landmarks, lambda thumb, others: thumb < others):
-                current_zoom_factor *= 1.1  # Increase zoom by 10%
-                zoom_changed = True
 
-            # Check for thumbs-down (zoom out)
-            elif check_thumb_position(hand_landmarks, lambda thumb, others: thumb > others):
-                current_zoom_factor /= 1.1  # Decrease zoom by 10%
-                zoom_changed = True
+        if resultsHand.multi_hand_landmarks:
+            for hand_landmarks in resultsHand.multi_hand_landmarks:
+                mp_draw.draw_landmarks(
+                    image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                
+                if check_index_fingers_crossed(resultsHand.multi_hand_landmarks):
+                    camera_on = False  # "Turn off" the camera
 
+                # Check for thumbs-up (zoom in)
+                elif check_thumb_position(hand_landmarks, lambda thumb, others: thumb < others):
+                    current_zoom_factor *= 1.01  # Increase zoom by 10%
+                    zoom_changed = True
+
+                # Check for thumbs-down (zoom out)
+                elif check_thumb_position(hand_landmarks, lambda thumb, others: thumb > others):
+                    current_zoom_factor /= 1.01  # Decrease zoom by 10%
+                    zoom_changed = True
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    else:
+        # Camera is "off": display a black screen with your name
+        image = np.zeros((480, 640, 3), dtype=np.uint8)  # Create a black image
+        cv2.putText(image, "80", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                      
     # Apply the current zoom factor, if changed
     if zoom_changed:
         current_zoom_factor = max(1.0, min(current_zoom_factor, 3.0))  # Limit zoom factor range for practicality
         image = zoom_image(image, current_zoom_factor)
+
 
     cv2.imshow('MediaPipe Hands', image)
 
     # Press escape to exit 
     if cv2.waitKey(5) & 0xFF == 27:
         break
+    elif cv2.waitKey(5) & 0xFF == ord('c'):
+        camera_on = True  # Toggle camera back on
 
 cap.release()
 cv2.destroyAllWindows()
