@@ -37,22 +37,22 @@ def libcam():
 button_state = False
 
 while(1):
-	if GPIO.input(button_pin1)==0:  # Button is pressed)
-		if button_state == False:
-			print("LED ON")
-			GPIO.output(led_pin1, True)
-			button_state = True
-			USBcamera()
-		#	camera.start_preview()
-		#	sleep(10)
-		#	camera.stop_preview()
-		#	camera.close()
-		else:
-			print("LED OFF")
-			GPIO.output(led_pin1, False)
-			button_state = False
-		sleep(.5)
-	if GPIO.input(button_pin2)==0:  # Button is pressed)
+        if GPIO.input(button_pin1)==0:  # Button is pressed)
+                if button_state == False:
+                        print("LED ON")
+                        GPIO.output(led_pin1, True)
+                        button_state = True
+                        USBcamera()
+                #	camera.start_preview()
+                #	sleep(10)
+                #	camera.stop_preview()
+                #	camera.close()
+                else:
+                        print("LED OFF")
+                        GPIO.output(led_pin1, False)
+                        button_state = False
+                sleep(.5)
+        if GPIO.input(button_pin2)==0:  # Button is pressed)
                 if button_state == False:
                         print("LED ON")
                         GPIO.output(led_pin2, True)
@@ -63,7 +63,7 @@ while(1):
                         GPIO.output(led_pin2, False)
                         button_state = False
                 sleep(.5)
-	if GPIO.input(button_pin3)==0:  # Button is pressed)
+        if GPIO.input(button_pin3)==0:  # Button is pressed)
                 if button_state == False:
                         print("LED ON")
                         GPIO.output(led_pin3, True)
