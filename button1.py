@@ -1,9 +1,6 @@
 import RPi.GPIO as GPIO
 import subprocess
 from time import sleep
-#from picamera import PiCamera
-
-#camera = PiCamera()
 
 # Use Broadcom SOC channel numbering for the pins
 GPIO.setmode(GPIO.BOARD)
