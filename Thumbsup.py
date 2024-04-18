@@ -11,7 +11,7 @@ hands = mp_hands.Hands(static_image_mode=False,
 mp_draw = mp.solutions.drawing_utils
 
 # Initialize webcam capture.
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 camera_on = True  # Initial state
 
